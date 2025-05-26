@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jogo da Velha</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .game-container {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    width: 320px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 2rem;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .cell {
+    background: #3a3a3a;
+    border-radius: 8px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3.5rem;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.25s ease;
+  }
+  .cell:hover {
+    background: #575757;
+  }
+  .cell.disabled {
+    cursor: default;
+    background: #222;
+  }
+  #status {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 1.25rem;
+    min-height: 1.75rem;
+  }
+  button#resetBtn {
+    margin-top: 1.5rem;
+    width: 100%;
+    background-color: #764ba2;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 14px #764ba2aa;
+    transition: background-color 0.3s ease;
+  }
+  button#resetBtn:hover {
+    background-color: #5f3a83;
+  }
+</style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Jogo da Velha</h1>
+    <div id="board" aria-label="Tabuleiro do jogo da velha" role="grid">
+      <div class="cell" role="gridcell" tabindex="0" data-index="0"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="1"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="2"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="3"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="4"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="5"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="6"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="7"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="8"></div>
+    </div>
+    <div id="status" aria-live="polite"></div>
+    <button id="resetBtn" aria-label="Reiniciar jogo">Reiniciar Jogo</button>
+  </div>
+<script>
+  (() => {
+    const board = document.getElementById('board');
+    const cells = Array.from(document.querySelectorAll('.cell'));
+    const statusDiv = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let boardState = ['', '', '', '', '', '', '', '', ''];
+
+    // Winning combinations indices
+    const winningCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+
+    function handleCellClick(e) {
+      const clickedCell = e.target;
+      const index = +clickedCell.getAttribute('data-index');
+
+      if (boardState[index] !== '' || !gameActive) {
+        return;
+      }
+
+      updateCell(clickedCell, index);
+      checkResult();
+    }
+
+    function updateCell(cell, index) {
+      boardState[index] = currentPlayer;
+      cell.textContent = currentPlayer;
+      cell.classList.add('disabled');
+    }
+
+    function checkResult() {
+      let roundWon = false;
+
+      for (const combo of winningCombinations) {
+        const [a, b, c] = combo;
+        if (boardState[a] &&
+            boardState[a] === boardState[b] &&
+            boardState[a] === boardState[c]) {
+          roundWon = true;
+          highlightWinner(combo);
+          break;
+        }
+      }
+
+      if (roundWon) {
+        statusDiv.textContent = `Jogador ${currentPlayer} venceu! 🎉`;
+        gameActive = false;
+        return;
+      }
+
+      if (!boardState.includes('')) {
+        statusDiv.textContent = 'Empate! 🤝';
+        gameActive = false;
+        return;
+      }
+
+      // Switch player
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusDiv.textContent = `Vez do jogador ${currentPlayer}`;
+    }
+
+    function highlightWinner(combo) {
+      combo.forEach(i => {
+        cells[i].style.backgroundColor = '#4caf50';
+        cells[i].style.color = '#fff';
+        cells[i].classList.remove('disabled');
+      });
+    }
+
+    function resetGame() {
+      boardState = ['', '', '', '', '', '', '', '', ''];
+      gameActive = true;
+      currentPlayer = 'X';
+      statusDiv.textContent = `Vez do jogador ${currentPlayer}`;
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.style.backgroundColor = '#3a3a3a';
+        cell.style.color = '#fff';
+        cell.classList.remove('disabled');
+      });
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    resetBtn.addEventListener('click', resetGame);
+
+    // Initialize game status
+    statusDiv.textContent = `Vez do jogador ${currentPlayer}`;
+  })();
+</script>
+</body>
+</html>
+
